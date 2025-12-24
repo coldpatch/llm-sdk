@@ -25,7 +25,6 @@ var vertexProjectModel *google.GoogleModel
 func TestMain(m *testing.M) {
 	godotenv.Load("../../.env")
 	apiKey := os.Getenv("GOOGLE_API_KEY")
-	vertexAccessToken := os.Getenv("VERTEX_ACCESS_TOKEN")
 	if apiKey == "" {
 		panic("GOOGLE_API_KEY must be set")
 	}
@@ -43,21 +42,25 @@ func TestMain(m *testing.M) {
 		APIKey: apiKey,
 	})
 
-	if vertexAccessToken != "" {
-		vertexGlobalModel = google.NewGoogleModel("gemini-2.5-flash-lite", google.GoogleModelOptions{
-			AccessToken:  vertexAccessToken,
+	vertexAccessToken := os.Getenv("VERTEX_ACCESS_TOKEN")
+	vertexAPIKey := os.Getenv("VERTEX_API_KEY")
+	if vertexAccessToken != "" || vertexAPIKey != "" {
+		globalOptions := google.GoogleModelOptions{
 			ProviderType: google.ProviderTypeVertexAI,
-		})
+		}
+		if vertexAccessToken != "" {
+			globalOptions.AccessToken = vertexAccessToken
+		} else if vertexAPIKey != "" {
+			globalOptions.APIKey = vertexAPIKey
+		}
+		vertexGlobalModel = google.NewGoogleModel("gemini-2.5-flash-lite", globalOptions)
 
 		vertexProjectID := os.Getenv("VERTEX_PROJECT_ID")
 		vertexLocation := os.Getenv("VERTEX_LOCATION")
-		if vertexProjectID != "" && vertexLocation != "" {
-			vertexProjectModel = google.NewGoogleModel("gemini-2.5-flash-lite", google.GoogleModelOptions{
-				AccessToken:  vertexAccessToken,
-				ProjectID:    vertexProjectID,
-				Location:     vertexLocation,
-				ProviderType: google.ProviderTypeVertexAI,
-			})
+		if vertexProjectID != "" && vertexLocation != "" && vertexAccessToken != "" {
+			globalOptions.ProjectID = vertexProjectID
+			globalOptions.Location = vertexLocation
+			vertexProjectModel = google.NewGoogleModel("gemini-2.5-flash-lite", globalOptions)
 		}
 	}
 
